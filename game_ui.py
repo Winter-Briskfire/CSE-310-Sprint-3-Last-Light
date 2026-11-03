@@ -23,6 +23,11 @@ def wrapped_lines(text, font, width):
     return result
 
 
+def faded_color(color, background=BG, amount=0.5):
+    """Blend a button toward the background to show hover/selection."""
+    return tuple(int(color[index] * (1 - amount) + background[index] * amount) for index in range(3))
+
+
 class GameUI:
     def __init__(self, base_dir):
         pygame.init()

@@ -14,7 +14,7 @@ You can also double-click `LastLight.exe` in this folder. It is a standalone Win
 
 ## Controls
 
-- Use the mouse or number keys to choose an option.
+- Use the mouse or number keys to choose an option. Hovering over or selecting a button fades it by about 50% for visual feedback.
 - `Enter` starts the game and confirms the operative's name.
 - `S` saves to `last_light_save.json`; `L` loads it.
 - `R` restarts the current mission; `Esc` returns to the title screen.

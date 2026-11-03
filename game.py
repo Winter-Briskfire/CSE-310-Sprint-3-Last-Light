@@ -7,7 +7,7 @@ from dataclasses import asdict
 
 import pygame
 
-from game_ui import BG, CYAN, FPS, GOLD, GREEN, HEIGHT, LIGHT, MUTED, PANEL, RED, WHITE, WIDTH, GameUI, wrapped_lines
+from game_ui import BG, CYAN, FPS, GOLD, GREEN, HEIGHT, LIGHT, MUTED, PANEL, RED, WHITE, WIDTH, GameUI, faded_color, wrapped_lines
 from hero import Hero
 from story import ENDINGS, OUTCOMES, SCENES
 
@@ -22,6 +22,9 @@ class Game(GameUI):
         self.name = ""
         self.notice = ""
         self.notice_time = 0
+        self.hover_choice = -1
+        self.selected_choice = -1
+        self.selected_until = 0
 
     def draw(self):
         self.screen.fill(BG)
@@ -62,7 +65,9 @@ class Game(GameUI):
         self.draw_text(prompt, (60, 335), self.sub, CYAN)
         for index, (label, _, _) in enumerate(choices):
             rect = pygame.Rect(60, 380 + index * 68, WIDTH - 120, 54)
-            self.box(rect, LIGHT if rect.collidepoint(pygame.mouse.get_pos()) else PANEL, 9)
+            hovered = rect.collidepoint(pygame.mouse.get_pos())
+            active = hovered or index == self.selected_choice
+            self.box(rect, faded_color(PANEL) if active else PANEL, 9)
             self.draw_text(str(index + 1), (78, rect.y + 13), self.head, GOLD)
             self.draw_text(label, (125, rect.y + 16))
 
@@ -85,7 +90,16 @@ class Game(GameUI):
         self.name = ""
         self.mode = "name"
 
-    def choose(self, index):
+    def select_choice(self, index):
+        _, _, choices = SCENES[self.hero.scene]
+        if not 0 <= index < len(choices):
+            return
+        if self.selected_until:
+            return
+        self.selected_choice = index
+        self.selected_until = 8
+
+    def apply_choice(self, index):
         _, _, choices = SCENES[self.hero.scene]
         if not 0 <= index < len(choices):
             return
@@ -104,6 +118,7 @@ class Game(GameUI):
             self.mode = "ending"
         else:
             self.hero.scene = next_scene
+        self.selected_choice = -1
 
     def save(self):
         save_path = os.path.join(os.path.dirname(__file__), SAVE_FILE)
@@ -158,7 +173,20 @@ class Game(GameUI):
             elif event.key == pygame.K_r:
                 self.start()
             elif pygame.K_1 <= event.key <= pygame.K_9:
-                self.choose(event.key - pygame.K_1)
+                self.select_choice(event.key - pygame.K_1)
+
+    def handle_mouse(self, position):
+        """Handle clickable title-screen controls and story choices."""
+        if self.mode == "title":
+            if pygame.Rect(330, 350, 440, 52).collidepoint(position):
+                self.start()
+            elif pygame.Rect(330, 402, 440, 52).collidepoint(position):
+                self.load()
+        elif self.mode == "scene":
+            for index in range(len(SCENES[self.hero.scene][2])):
+                rect = pygame.Rect(60, 380 + index * 68, WIDTH - 120, 54)
+                if rect.collidepoint(position):
+                    self.select_choice(index)
 
     def run(self):
         while True:
@@ -168,11 +196,12 @@ class Game(GameUI):
                     return
                 if event.type == pygame.KEYDOWN:
                     self.handle_key(event)
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.mode == "scene":
-                    for index in range(len(SCENES[self.hero.scene][2])):
-                        rect = pygame.Rect(60, 380 + index * 68, WIDTH - 120, 54)
-                        if rect.collidepoint(event.pos):
-                            self.choose(index)
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    self.handle_mouse(event.pos)
+            if self.selected_until:
+                self.selected_until -= 1
+                if self.selected_until == 0:
+                    self.apply_choice(self.selected_choice)
             if self.notice_time:
                 self.notice_time -= 1
             self.draw()
