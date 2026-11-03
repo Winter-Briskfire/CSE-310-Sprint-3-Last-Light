@@ -1,1 +1,9 @@
 pygame>=2.5.0
+
+# Project requirements
+# 1. Include four classes with different starting scenarios.
+# 2. Provide a PyGame interface with keyboard and mouse controls.
+# 3. Track choices with health, trust, clues, and resolve stats.
+# 4. Include branching scenes and multiple endings.
+# 5. Organize the project into separate files with comments and a README.
+# Stretch goal: Include JSON save and load functionality.
